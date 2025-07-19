@@ -61,6 +61,7 @@ void CMenuOptions::_Init( void )
 		PC_AUDIO, UI_Audio_Menu, QMF_NOTIFY );
 	AddButton( L( "GameUI_Video" ), L( "Change screen size, video mode, gamme and glare reduction." ),
 		PC_VIDEO, UI_VidOptions_Menu, QMF_NOTIFY );
+	AddButton( L( "VR" ), L( "Change VR specific settings." ), PC_VR, UI_VR_Menu, QMF_NOTIFY );
 	if( !ui_menu_style->value ) {
 		AddButton( L( "Touch" ), L( "Change touch settings and buttons" ),
 			PC_TOUCH, UI_Touch_Menu, QMF_NOTIFY, 't' );

@@ -97,6 +97,7 @@ static int g_hotkeys[PC_BUTTONCOUNT] =
 	'a', // PC_ADV_OPT2,
 	's', // PC_SPECTATE_GAME,
 	'p', // PC_SPECTATE_GAMES,
+	0, // PC_VR,
 };
 
 CMenuPicButton::CMenuPicButton() : BaseClass()

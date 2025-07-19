@@ -89,6 +89,7 @@ enum EDefaultBtns
 	PC_ADV_OPT2,
 	PC_SPECTATE_GAME,
 	PC_SPECTATE_GAMES,
+	PC_VR,
 	PC_BUTTONCOUNT		// must be last
 };
 
