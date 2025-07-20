@@ -220,10 +220,10 @@ void CMenuMain::_Init( void )
 
 	saveRestore.iFlags |= QMF_NOTIFY;
 
-	customGame.SetNameAndStatus( L( "GameUI_ChangeGame" ), L( "StringsList_530" ) );
-	customGame.SetPicture( PC_CUSTOM_GAME );
+	customGame.SetNameAndStatus( L( "Credits" ), L( "List of people who contributed to this project." ) );
+	//customGame.SetPicture( PC_CUSTOM_GAME );
 	customGame.iFlags |= QMF_NOTIFY;
-	customGame.onReleased = UI_CustomGame_Menu;
+	customGame.onReleased = UI_VR_Credits;
 
 	previews.SetNameAndStatus( L( "Web page" ), L( "Additional information about the VR port." ) );
 	//previews.SetPicture( PC_PREVIEWS );
