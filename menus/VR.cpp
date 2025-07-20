@@ -41,6 +41,7 @@ private:
 
 	CMenuSpinControl supersampling;
 	CMenuCheckBox msaa;
+	CMenuCheckBox refreshrate;
 	CMenuCheckBox rightHanded;
 };
 
@@ -53,6 +54,7 @@ void CMenuVR::GetConfig( void )
 {
 	supersampling.LinkCvar( "vr_supersampling", CMenuEditable::CVAR_VALUE );
 	msaa.LinkCvar( "vr_msaa" );
+	refreshrate.LinkCvar( "vr_refreshrate" );
 	rightHanded.LinkCvar( "cl_righthand" );
 }
 
@@ -65,6 +67,7 @@ void CMenuVR::SaveAndPopMenu()
 {
 	supersampling.WriteCvar();
 	msaa.WriteCvar();
+	refreshrate.WriteCvar();
 	rightHanded.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
@@ -90,14 +93,19 @@ void CMenuVR::_Init( void )
 	msaa.onChanged = CMenuEditable::WriteCvarCb;
 	msaa.SetCoord( 320, 330 );
 
+	refreshrate.szName = L( "90hz refresh rate" );
+	refreshrate.onChanged = CMenuEditable::WriteCvarCb;
+	refreshrate.SetCoord( 320, 380 );
+
 	rightHanded.szName = L( "Right-handed controller mapping" );
 	rightHanded.onChanged = CMenuEditable::WriteCvarCb;
-	rightHanded.SetCoord( 320, 380 );
+	rightHanded.SetCoord( 320, 430 );
 
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
 	AddItem( msaa );
 	AddItem( supersampling );
+	AddItem( refreshrate );
 	AddItem( rightHanded );
 }
 
