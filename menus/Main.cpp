@@ -225,10 +225,10 @@ void CMenuMain::_Init( void )
 	customGame.iFlags |= QMF_NOTIFY;
 	customGame.onReleased = UI_CustomGame_Menu;
 
-	previews.SetNameAndStatus( L( "Previews" ), L( "StringsList_400" ) );
-	previews.SetPicture( PC_PREVIEWS );
+	previews.SetNameAndStatus( L( "Web page" ), L( "Additional information about the VR port." ) );
+	//previews.SetPicture( PC_PREVIEWS );
 	previews.iFlags |= QMF_NOTIFY;
-	SET_EVENT( previews.onReleased, EngFuncs::ShellExecute( MenuStrings[ IDS_MEDIA_PREVIEWURL ], NULL, false ) );
+	SET_EVENT( previews.onReleased, EngFuncs::ShellExecute( "https://csvr.online/", NULL, false ) );
 
 	quit.SetNameAndStatus( L( "GameUI_GameMenu_Quit" ), L( "GameUI_QuitConfirmationText" ) );
 	quit.SetPicture( PC_QUIT );
