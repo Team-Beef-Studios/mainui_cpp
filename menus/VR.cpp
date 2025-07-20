@@ -42,6 +42,8 @@ private:
 	CMenuSpinControl supersampling;
 	CMenuCheckBox msaa;
 	CMenuCheckBox refreshrate;
+	CMenuSpinControl turnangle;
+	CMenuCheckBox smoothturn;
 	CMenuCheckBox rightHanded;
 };
 
@@ -55,6 +57,8 @@ void CMenuVR::GetConfig( void )
 	supersampling.LinkCvar( "vr_supersampling", CMenuEditable::CVAR_VALUE );
 	msaa.LinkCvar( "vr_msaa" );
 	refreshrate.LinkCvar( "vr_refreshrate" );
+	turnangle.LinkCvar( "vr_turn_angle", CMenuEditable::CVAR_VALUE );
+	smoothturn.LinkCvar( "vr_turn_type" );
 	rightHanded.LinkCvar( "cl_righthand" );
 }
 
@@ -68,6 +72,8 @@ void CMenuVR::SaveAndPopMenu()
 	supersampling.WriteCvar();
 	msaa.WriteCvar();
 	refreshrate.WriteCvar();
+	turnangle.WriteCvar();
+	smoothturn.WriteCvar();
 	rightHanded.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
@@ -97,15 +103,27 @@ void CMenuVR::_Init( void )
 	refreshrate.onChanged = CMenuEditable::WriteCvarCb;
 	refreshrate.SetCoord( 320, 380 );
 
+	turnangle.szName = L( "Turn angle/speed" );
+	turnangle.Setup( 5, 90, 5 );
+	turnangle.onChanged = CMenuEditable::WriteCvarCb;
+	turnangle.font = QM_SMALLFONT;
+	turnangle.SetRect( 320, 530, 300, 32 );
+
+	smoothturn.szName = L( "Smooth turn" );
+	smoothturn.onChanged = CMenuEditable::WriteCvarCb;
+	smoothturn.SetCoord( 320, 580 );
+
 	rightHanded.szName = L( "Right-handed controller mapping" );
 	rightHanded.onChanged = CMenuEditable::WriteCvarCb;
-	rightHanded.SetCoord( 320, 430 );
+	rightHanded.SetCoord( 320, 630 );
 
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
 	AddItem( msaa );
 	AddItem( supersampling );
 	AddItem( refreshrate );
+	AddItem( turnangle );
+	AddItem( smoothturn );
 	AddItem( rightHanded );
 }
 
