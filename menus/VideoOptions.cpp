@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "CheckBox.h"
 #include "YesNoMessageBox.h"
 
-#define ART_BANNER	  	"gfx/shell/head_vidoptions"
+#define ART_BANNER	  	"gfx/shell/head_video"
 #define ART_GAMMA		"gfx/shell/gamma"
 
 #define LEGACY_VIEWSIZE 0
