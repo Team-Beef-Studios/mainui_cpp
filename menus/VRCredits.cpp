@@ -58,7 +58,7 @@ CMenuVRCredits::Init
 */
 void CMenuVRCredits::_Init( void )
 {
-    testImage.SetRect( 0, 0, 1080, 810 );
+    testImage.SetRect( 0, 0, 1036, 777 );
     testImage.SetPicture( ART_CREDITS );
     testImage.iFlags |= QMF_NOTIFY;
     testImage.onReleased = VoidCb( &CMenuVRCredits::SaveAndPopMenu );
