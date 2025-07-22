@@ -64,7 +64,7 @@ void CMenuMultiplayer::_Init( void )
 	// AddButton( L( "Spectate game" ), L( "Spectate internet games" ), PC_SPECTATE_GAMES, NoopCb, QMF_GRAYED | QMF_NOTIFY );
 	AddButton( L( "LAN game" ), L( "Set up a Counter-Strike game on a local area network." ), PC_LAN_GAME, UI_LanGame_Menu, QMF_NOTIFY );
 	AddButton( L( "GameUI_GameMenu_Customize" ), L( "Choose your player name, and select visual options for your character" ), PC_CUSTOMIZE, UI_PlayerSetup_Menu, QMF_NOTIFY );
-	AddButton( L( "Controls" ), L( "Change keyboard, mouse, touch and joystick settings." ), PC_CONTROLS, UI_Controls_Menu, QMF_NOTIFY );
+	//AddButton( L( "Controls" ), L( "Change keyboard, mouse, touch and joystick settings." ), PC_CONTROLS, UI_Controls_Menu, QMF_NOTIFY );
 	AddButton( L( "Done" ), L( "Go back to the Main Menu." ), PC_DONE, VoidCb( &CMenuMultiplayer::Hide ), QMF_NOTIFY );
 }
 
