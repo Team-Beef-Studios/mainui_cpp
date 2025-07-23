@@ -221,12 +221,12 @@ void CMenuMain::_Init( void )
 	saveRestore.iFlags |= QMF_NOTIFY;
 
 	customGame.SetNameAndStatus( L( "Credits" ), L( "List of people who contributed to this project." ) );
-	//customGame.SetPicture( PC_CUSTOM_GAME );
+	customGame.SetPicture( PC_VRCREDITS );
 	customGame.iFlags |= QMF_NOTIFY;
 	customGame.onReleased = UI_VR_Credits;
 
 	previews.SetNameAndStatus( L( "Web page" ), L( "Additional information about the VR port." ) );
-	//previews.SetPicture( PC_PREVIEWS );
+	previews.SetPicture( PC_WEBPAGE );
 	previews.iFlags |= QMF_NOTIFY;
 	SET_EVENT( previews.onReleased, EngFuncs::ShellExecute( "https://csvr.online/", NULL, false ) );
 

@@ -90,6 +90,8 @@ enum EDefaultBtns
 	PC_SPECTATE_GAME,
 	PC_SPECTATE_GAMES,
 	PC_VR,
+	PC_VRCREDITS,
+	PC_WEBPAGE,
 	PC_BUTTONCOUNT		// must be last
 };
 
@@ -101,6 +103,9 @@ enum EDefaultBtns
 #define PC_FAVORITE      "gfx/shell/btn_favorite"
 #define PC_UNFAVORITE    "gfx/shell/btn_unfavorite"
 #define PC_CROSSHAIR	 "gfx/shell/btn_xhair"
+#define PC_VR            "gfx/shell/btn_vr"
+#define PC_VRCREDITS     "gfx/shell/btn_vrcredits"
+#define PC_WEBPAGE       "gfx/shell/btn_webpage"
 
 #define BUTTON_NOFOCUS	0
 #define BUTTON_FOCUS	1
