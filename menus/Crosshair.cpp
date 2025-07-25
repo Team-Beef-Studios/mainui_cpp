@@ -159,13 +159,13 @@ void CMenuCrosshair::_Init()
 	xhair.SetRect( 72, 350, 880, 466 );
 
 	AddItem( banner );
-	AddItem( useXhair );
+	//AddItem( useXhair );
 	AddItem( crosshair );
 	AddItem( xhair );
 	AddItem( done );
 
 	done.szName = L( "GameUI_OK" );
-	done.SetCoord( 72, 280 );
+	done.SetCoord( 65, 240 );
 	done.SetPicture( PC_DONE );
 	done.onReleased = VoidCb( &CMenuCrosshair::SaveAndPopMenu );
 
