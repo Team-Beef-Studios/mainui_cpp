@@ -1,6 +1,6 @@
 /*
 Copyright (C) 1997-2001 Id Software, Inc.
-Copyright (C) 2025 APAmk2
+Copyright (C) 2025 APAmk2, Vladislav4KZ, Velaron
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -23,8 +23,86 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "PicButton.h"
 #include "Slider.h"
 #include "CheckBox.h"
+#include "SpinControl.h"
+#include "StringArrayModel.h"
 
 #define ART_BANNER "gfx/shell/head_xhair"
+
+static const char *g_szCrosshairSizes[] = { "auto", "small", "medium", "large" };
+
+static struct
+{
+	const char *name;
+	int r, g, b;
+} g_CrosshairColors[] = {
+	{ "#Valve_Green", 50, 250, 50 },
+	{ "#Valve_Red", 250, 50, 50 },
+	{ "#Valve_Blue", 50, 50, 250 },
+	{ "#Valve_Yellow", 250, 250, 50 },
+	{ "#Valve_Ltblue", 50, 250, 250 }
+};
+
+class CMenuClassicCrosshair : public CMenuItemsHolder
+{
+public:
+	void Save();
+
+private:
+	void _Init() override;
+	void Reload() override;
+
+	CMenuSpinControl size;
+	CMenuSpinControl color;
+	CMenuCheckBox translucent;
+
+	class CMenuCrosshairPreview : public CMenuBaseItem
+	{
+	public:
+		void Draw() override;
+
+		HIMAGE hImage;
+		HIMAGE hWhite;
+	} preview;
+};
+
+class CMenuXhair : public CMenuItemsHolder
+{
+public:
+	void Save();
+
+private:
+	void _Init() override;
+	void Reload() override;
+
+	CMenuCheckBox additive;
+
+	CMenuSlider r;
+	CMenuSlider g;
+	CMenuSlider b;
+	CMenuSlider a;
+
+	CMenuCheckBox dot;
+	CMenuCheckBox dynamicMove;
+	CMenuSlider dynamicScale;
+	CMenuCheckBox gapUseWeaponValue;
+	CMenuSlider gap;
+	CMenuSlider pad;
+	CMenuSlider size;
+	CMenuCheckBox xhairT;
+	CMenuSlider thick;
+
+	class CMenuCrosshairPreview : public CMenuBaseItem
+	{
+	public:
+		void Draw() override;
+		void DrawCrosshairPadding( int _pad, int _x0, int _y0, int _x1, int _y1 );
+		void DrawCrosshairSection( int _x0, int _y0, int _x1, int _y1 );
+		int ScaleForRes( float value, int height );
+
+		HIMAGE hImage;
+		HIMAGE hWhite;
+	} preview;
+};
 
 class CMenuCrosshair : public CMenuFramework
 {
@@ -32,257 +110,294 @@ public:
 	CMenuCrosshair() :
 	    CMenuFramework( "CMenuCrosshair" ) { }
 
-private:
-	void _Init() override;
-	void _VidInit() override;
+	void SaveAndPopMenu() override;
+	void ToggleMenu();
 
-public:
-	void SaveButton();
-	void SaveCrosshair();
-
-	static void ExitMenuCb( CMenuBaseItem *pSelf, void *pExtra );
-
-	CMenuSlider red;
-	CMenuSlider green;
-	CMenuSlider blue;
-	CMenuSlider alpha;
-
-	CMenuSlider gap;
-	CMenuSlider pad;
-	CMenuSlider size;
-	CMenuSlider thick;
-	CMenuSlider dynScale;
-
-	CMenuCheckBox newXhair;
-	CMenuCheckBox dot;
-	CMenuCheckBox tShape;
-	CMenuCheckBox dynMove;
-	CMenuCheckBox weapGap;
-
-	CMenuPicButton save;
+	CMenuCheckBox useXhair;
+	CMenuClassicCrosshair crosshair;
+	CMenuXhair xhair;
 	CMenuPicButton done;
 
-	class CMenuCrosshairPreview : public CMenuBaseItem
-	{
-	public:
-		void Draw() override;
-		void DrawCrosshairPadding( int _pad, int _x0, int _y0, int _x1, int _y1, CMenuCrosshair *parent );
-		void DrawCrosshairSection( int _x0, int _y0, int _x1, int _y1, CMenuCrosshair *parent );
-		int ScaleForRes( float value, int height );
-
-		HIMAGE hImage;
-	} crosshair;
+private:
+	void _Init() override;
 };
 
-ADD_MENU3( menu_crosshair, CMenuCrosshair, UI_Crosshair_Menu );
-
-void CMenuCrosshair::SaveCrosshair()
+void CMenuCrosshair::SaveAndPopMenu()
 {
-	EngFuncs::ClientCmdF( true, "xhair_color \"%u %u %u %u\"\n",
-	                      (uint)red.GetCurrentValue(),
-	                      (uint)green.GetCurrentValue(),
-	                      (uint)blue.GetCurrentValue(),
-	                      (uint)alpha.GetCurrentValue() );
+	useXhair.WriteCvar();
 
-	gap.WriteCvar();
-	pad.WriteCvar();
-	size.WriteCvar();
-	thick.WriteCvar();
-	dynScale.WriteCvar();
+	xhair.Save();
+	crosshair.Save();
 
-	newXhair.WriteCvar();
-	dot.WriteCvar();
-	tShape.WriteCvar();
-	dynMove.WriteCvar();
-	weapGap.WriteCvar();
-
-	Hide();
+	CMenuFramework::SaveAndPopMenu();
 }
 
-/*
-=================
-UI_Crosshair_Init
-=================
-*/
-void CMenuCrosshair::_Init( void )
+void CMenuCrosshair::ToggleMenu()
+{
+	if ( useXhair.bChecked )
+	{
+		xhair.Show();
+		crosshair.Hide();
+	}
+	else
+	{
+		xhair.Hide();
+		crosshair.Show();
+	}
+}
+
+void CMenuCrosshair::_Init()
 {
 	banner.SetPicture( ART_BANNER );
 
-	red.eFocusAnimation = QM_PULSEIFFOCUS;
-	red.SetNameAndStatus( L( "Red:" ), L( "Texture red channel" ) );
-	red.Setup( 0, 255, 1 );
+	useXhair.SetNameAndStatus( L( "Enhanced crosshair" ), L( "Enables enhanced crosshair" ) );
+	useXhair.LinkCvar( "xhair_enable" );
+	useXhair.SetCoord( 72, 230 );
+	useXhair.onChanged = VoidCb( &CMenuCrosshair::ToggleMenu );
 
-	green.eFocusAnimation = QM_PULSEIFFOCUS;
-	green.SetNameAndStatus( L( "Green:" ), L( "Texture green channel" ) );
-	green.Setup( 0, 255, 1 );
-
-	blue.eFocusAnimation = QM_PULSEIFFOCUS;
-	blue.SetNameAndStatus( L( "Blue:" ), L( "Texture blue channel" ) );
-	blue.Setup( 0, 255, 1 );
-
-	alpha.eFocusAnimation = QM_PULSEIFFOCUS;
-	alpha.SetNameAndStatus( L( "Alpha:" ), L( "Texture alpha channel" ) );
-	alpha.Setup( 0, 255, 1 );
-
-	newXhair.SetNameAndStatus( L( "Enhanced crosshair" ), L( "Enables enhanced crosshair" ) );
-	newXhair.LinkCvar( "xhair_enable" );
-
-	dynMove.SetNameAndStatus( L( "Dynamic move" ), L( "Jumping, crouching and moving will affect the dynamic crosshair" ) );
-	dynMove.LinkCvar( "xhair_dynamic_move" );
-
-	gap.eFocusAnimation = QM_PULSEIFFOCUS;
-	gap.SetNameAndStatus( L( "Gap:" ), L( "Space between crosshair's lines" ) );
-	gap.Setup( 0, 13, 1 );
-
-	pad.eFocusAnimation = QM_PULSEIFFOCUS;
-	pad.SetNameAndStatus( L( "Padding:" ), L( "Border around crosshair" ) );
-	pad.Setup( 0, 16, 1 );
-
-	size.eFocusAnimation = QM_PULSEIFFOCUS;
-	size.SetNameAndStatus( L( "Size:" ), L( "Crosshair size" ) );
-	size.Setup( 0, 32, 1 );
-
-	thick.eFocusAnimation = QM_PULSEIFFOCUS;
-	thick.SetNameAndStatus( L( "Thickness:" ), L( "Crosshair thickness" ) );
-	thick.Setup( 0, 11, 1 );
-
-	dynScale.eFocusAnimation = QM_PULSEIFFOCUS;
-	dynScale.SetNameAndStatus( L( "Dynamic scale:" ), L( "Scale of the dynamic crosshair movement" ) );
-	dynScale.Setup( 0, 2.0f, 0.1f );
-
-	dot.SetNameAndStatus( L( "Dot" ), L( "Enables crosshair dot" ) );
-	dot.LinkCvar( "xhair_dot" );
-
-	tShape.SetNameAndStatus( L( "T-Shape" ), L( "Enables T-shaped crosshair" ) );
-	tShape.LinkCvar( "xhair_t" );
-
-	weapGap.SetNameAndStatus( L( "Weapon Gap" ), L( "Makes the crosshair gap scale depend on the active weapon" ) );
-	weapGap.LinkCvar( "xhair_gap_useweaponvalue" );
-
-	save.szName = L( "Done" );
-	save.SetPicture( PC_DONE );
-	save.onReleased = VoidCb( &CMenuCrosshair::SaveCrosshair );
-
-	done.szName = L( "GameUI_Cancel" );
-	done.SetPicture( PC_CANCEL );
-	done.onReleased = VoidCb( &CMenuCrosshair::Hide );
-
-	crosshair.szName = L( "GameUI_CrosshairDescription" );
-	crosshair.SetRect( 700, 230, 200, 200 );
-	crosshair.hImage = EngFuncs::PIC_Load( "gfx/vgui/crosshair.tga", 0 );
+	crosshair.SetRect( 72, 350, 880, 466 );
+	xhair.SetRect( 72, 350, 880, 466 );
 
 	AddItem( banner );
-	AddItem( red );
-	AddItem( green );
-	AddItem( blue );
-	AddItem( alpha );
-	AddItem( newXhair );
-	AddItem( dynMove );
+	AddItem( useXhair );
+	AddItem( crosshair );
+	AddItem( xhair );
+	AddItem( done );
 
+	done.szName = L( "GameUI_OK" );
+	done.SetCoord( 72, 280 );
+	done.SetPicture( PC_DONE );
+	done.onReleased = VoidCb( &CMenuCrosshair::SaveAndPopMenu );
+
+	ToggleMenu();
+}
+
+void CMenuClassicCrosshair::_Init()
+{
+	int x = 0, y = 0;
+
+	static const char *itemlist[V_ARRAYSIZE( g_CrosshairColors )];
+	static CStringArrayModel colors( itemlist, V_ARRAYSIZE( g_CrosshairColors ) );
+	for ( size_t i = 0; i < V_ARRAYSIZE( g_CrosshairColors ); i++ )
+		itemlist[i] = L( g_CrosshairColors[i].name );
+
+	static const char *sizelist[] = { L( "GameUI_Auto" ), L( "GameUI_Small" ), L( "GameUI_Medium" ), L( "GameUI_Large" ) };
+	static CStringArrayModel sizes( sizelist, V_ARRAYSIZE( sizelist ) );
+
+	size.Setup( &sizes );
+	size.LinkCvar( "cl_crosshair_size", CMenuEditable::CVAR_VALUE );
+	size.SetRect( x, y, 220, 32 );
+	y += 60;
+
+	color.Setup( &colors );
+	color.LinkCvar( "cl_crosshair_color", CMenuEditable::CVAR_STRING );
+	color.SetRect( x, y, 220, 32 );
+	y += 60;
+
+	translucent.SetNameAndStatus( L( "GameUI_Translucent" ), NULL );
+	translucent.LinkCvar( "cl_crosshair_translucent" );
+	translucent.SetCoord( x, y );
+	y = 0;
+	x = 584;
+
+	preview.szName = L( "GameUI_CrosshairDescription" );
+	preview.SetRect( x, y, 200, 200 );
+	preview.hImage = EngFuncs::PIC_Load( "gfx/vgui/crosshair.tga", 0 );
+	preview.hWhite = EngFuncs::PIC_Load( "*white" );
+
+	AddItem( preview );
+	AddItem( size );
+	AddItem( color );
+	AddItem( translucent );
+}
+
+void CMenuXhair::_Init()
+{
+	int x = 0, y = 0;
+
+	r.SetNameAndStatus( L( "Red" ), NULL );
+	r.Setup( 0, 255, 1 );
+	r.SetCoord( x, y );
+	y += 60;
+
+	g.SetNameAndStatus( L( "Green" ), NULL );
+	g.Setup( 0, 255, 1 );
+	g.SetCoord( x, y );
+	y += 60;
+
+	b.SetNameAndStatus( L( "Blue" ), NULL );
+	b.Setup( 0, 255, 1 );
+	b.SetCoord( x, y );
+	y += 60;
+
+	a.SetNameAndStatus( L( "Alpha" ), NULL );
+	a.Setup( 0, 255, 1 );
+	a.SetCoord( x, y );
+	y += 60;
+
+	dynamicMove.SetNameAndStatus( L( "Dynamic move" ), NULL );
+	dynamicMove.LinkCvar( "xhair_dynamic_move" );
+	dynamicMove.SetCoord( x, y );
+	y += 60;
+
+	gapUseWeaponValue.SetNameAndStatus( L( "Gap, use weapon value" ), NULL );
+	gapUseWeaponValue.LinkCvar( "xhair_gap_useweaponvalue" );
+	gapUseWeaponValue.SetCoord( x, y );
+	y += 60;
+
+	additive.SetNameAndStatus( L( "Additive" ), NULL );
+	additive.LinkCvar( "xhair_additive" );
+	additive.SetCoord( x, y );
+	y = 0;
+	x += 292;
+
+	gap.SetNameAndStatus( L( "Gap" ), NULL );
+	gap.Setup( -6, 15, 1 );
+	gap.LinkCvar( "xhair_gap" );
+	gap.SetCoord( x, y );
+	y += 60;
+
+	pad.SetNameAndStatus( L( "Padding" ), NULL );
+	pad.Setup( 0, 16, 1 );
+	pad.LinkCvar( "xhair_pad" );
+	pad.SetCoord( x, y );
+	y += 60;
+
+	size.SetNameAndStatus( L( "Size" ), NULL );
+	size.Setup( 0, 32, 1 );
+	size.LinkCvar( "xhair_size" );
+	size.SetCoord( x, y );
+	y += 60;
+
+	thick.SetNameAndStatus( L( "Thickness" ), NULL );
+	thick.Setup( 0, 32, 1 );
+	thick.LinkCvar( "xhair_thick" );
+	thick.SetCoord( x, y );
+	y += 60;
+
+	dynamicScale.SetNameAndStatus( L( "Dynamic scale" ), NULL );
+	dynamicScale.Setup( 0, 3.0f, 0.1f );
+	dynamicScale.LinkCvar( "xhair_dynamic_scale" );
+	dynamicScale.SetCoord( x, y );
+	y += 60;
+
+	dot.SetNameAndStatus( L( "Dot" ), NULL );
+	dot.LinkCvar( "xhair_dot" );
+	dot.SetCoord( x, y );
+	y += 60;
+
+	xhairT.SetNameAndStatus( L( "T-Shape" ), NULL );
+	xhairT.LinkCvar( "xhair_t" );
+	xhairT.SetCoord( x, y );
+	y = 0;
+	x += 292;
+
+	preview.SetNameAndStatus( L( "GameUI_CrosshairDescription" ), NULL );
+	preview.SetRect( x, y, 200, 200 );
+	preview.hImage = EngFuncs::PIC_Load( "gfx/vgui/crosshair.tga", 0 );
+	preview.hWhite = EngFuncs::PIC_Load( "*white" );
+
+	AddItem( r );
+	AddItem( g );
+	AddItem( b );
+	AddItem( a );
+
+	AddItem( dynamicMove );
 	AddItem( gap );
 	AddItem( pad );
 	AddItem( size );
 	AddItem( thick );
-	AddItem( dynScale );
-
+	AddItem( dynamicScale );
 	AddItem( dot );
-	AddItem( tShape );
-	AddItem( weapGap );
+	AddItem( xhairT );
+	AddItem( gapUseWeaponValue );
+	AddItem( additive );
 
-	AddItem( save );
-	AddItem( done );
-	AddItem( crosshair );
+	AddItem( preview );
 }
 
-void CMenuCrosshair::_VidInit()
+void CMenuXhair::Reload()
 {
-	red.SetCoord( 72, 230 );
-	green.SetCoord( 72, 290 );
-	blue.SetCoord( 72, 350 );
-	alpha.SetCoord( 72, 410 );
-	newXhair.SetCoord( 72, 460 );
-	dynMove.SetCoord( 72, 510 );
+	int cvarColor[4] = { 0, 255, 0, 255 };
 
-	int cvarColor[3] = { 0, 255, 0 };
-	float cvarAlpha = 255.0f;
-	if ( sscanf( EngFuncs::GetCvarString( "xhair_color" ), "%d %d %d %f", &cvarColor[0], &cvarColor[1], &cvarColor[2], &cvarAlpha ) == 4 )
+	CMenuItemsHolder::Reload();
+
+	if ( sscanf( EngFuncs::GetCvarString( "xhair_color" ), "%d %d %d %d", &cvarColor[0], &cvarColor[1], &cvarColor[2], &cvarColor[3] ) == 4 )
 	{
-		red.SetCurrentValue( bound( 0, cvarColor[0], 255 ) );
-		green.SetCurrentValue( bound( 0, cvarColor[1], 255 ) );
-		blue.SetCurrentValue( bound( 0, cvarColor[2], 255 ) );
-		alpha.SetCurrentValue( bound( 0.0f, cvarAlpha, 255.0f ) );
+		r.SetCurrentValue( bound( 0, cvarColor[0], 255 ) );
+		g.SetCurrentValue( bound( 0, cvarColor[1], 255 ) );
+		b.SetCurrentValue( bound( 0, cvarColor[2], 255 ) );
+		a.SetCurrentValue( bound( 0, cvarColor[3], 255 ) );
+	}
+}
+
+void CMenuClassicCrosshair::Save()
+{
+	int i;
+	char colorstr[32];
+
+	i = size.GetCurrentValue();
+	EngFuncs::CvarSetString( "cl_crosshair_size", g_szCrosshairSizes[i] );
+
+	i = color.GetCurrentValue();
+	if ( i >= 0 && i < V_ARRAYSIZE( g_CrosshairColors ) )
+	{
+		snprintf( colorstr, sizeof( colorstr ), "%i %i %i", g_CrosshairColors[i].r, g_CrosshairColors[i].g, g_CrosshairColors[i].b );
+		EngFuncs::CvarSetString( "cl_crosshair_color", colorstr );
 	}
 
-	gap.SetCoord( 404, 230 );
-	gap.LinkCvar( "xhair_gap" );
-
-	pad.SetCoord( 404, 290 );
-	pad.LinkCvar( "xhair_pad" );
-
-	size.SetCoord( 404, 350 );
-	size.LinkCvar( "xhair_size" );
-
-	thick.SetCoord( 404, 410 );
-	thick.LinkCvar( "xhair_thick" );
-
-	dynScale.SetCoord( 404, 470 );
-	dynScale.LinkCvar( "xhair_dynamic_scale" );
-
-	dot.SetCoord( 404, 520 );
-	tShape.SetCoord( 404, 570 );
-	weapGap.SetCoord( 404, 620 );
-
-	save.SetCoord( 72, 630 );
-	done.SetCoord( 72, 680 );
+	translucent.WriteCvar();
 }
 
-/*
-=================
-UI_Crosshair_Menu
-=================
-*/
-void UI_Crosshair_Menu( void )
-{
-	menu_crosshair->Show();
-}
-
-int CMenuCrosshair::CMenuCrosshairPreview::ScaleForRes( float value, int height )
+int CMenuXhair::CMenuCrosshairPreview::ScaleForRes( float value, int height )
 {
 	/* "default" resolution is 640x480 */
 	return rint( value * ( (float)height / 480.0f ) );
 }
 
-void CMenuCrosshair::CMenuCrosshairPreview::DrawCrosshairSection( int _x0, int _y0, int _x1, int _y1, CMenuCrosshair *parent )
+void CMenuXhair::CMenuCrosshairPreview::DrawCrosshairSection( int _x0, int _y0, int _x1, int _y1 )
 {
+	CMenuXhair *parent = (CMenuXhair *)Parent();
+
 	float x0 = (float)_x0;
 	float y0 = (float)_y0;
 	float x1 = (float)_x1 - _x0;
 	float y1 = (float)_y1 - _y0;
 
-	uint color = ( (uint)parent->blue.GetCurrentValue() ) | ( ( (uint)parent->green.GetCurrentValue() ) << 8 ) | ( ( (uint)parent->red.GetCurrentValue() ) << 16 ) | ( ( (uint)parent->alpha.GetCurrentValue() ) << 24 );
+	EngFuncs::PIC_Set( hWhite, parent->r.GetCurrentValue(), parent->g.GetCurrentValue(), parent->b.GetCurrentValue(), parent->a.GetCurrentValue() );
 
-	UI_FillRect( x0, y0, x1, y1, color );
+	if ( parent->additive.bChecked )
+		EngFuncs::PIC_DrawAdditive( x0, y0, x1, y1 );
+	else
+		EngFuncs::PIC_DrawTrans( x0, y0, x1, y1 );
 }
 
-void CMenuCrosshair::CMenuCrosshairPreview::DrawCrosshairPadding( int _pad, int _x0, int _y0, int _x1, int _y1, CMenuCrosshair *parent )
+void CMenuXhair::CMenuCrosshairPreview::DrawCrosshairPadding( int _pad, int _x0, int _y0, int _x1, int _y1 )
 {
+	CMenuXhair *parent = (CMenuXhair *)Parent();
+
 	float pad = (float)_pad;
 	float x0 = (float)_x0;
 	float y0 = (float)_y0;
 	float x1 = (float)_x1 - _x0;
 	float y1 = (float)_y1 - _y0;
 
-	uint color = PackRGBA( 0, 0, 0, (uint)parent->alpha.GetCurrentValue() );
+	EngFuncs::PIC_Set( hWhite, 0, 0, 0, parent->a.GetCurrentValue() );
+	EngFuncs::PIC_DrawTrans( x0 - pad, y0 - pad, x1 + 2 * pad, pad ); // top part
 
-	UI_FillRect( x0 - pad, y0 - pad, x1 + 2 * pad, pad, color ); // top part
-	UI_FillRect( x0 - pad, y0 + y1, x1 + 2 * pad, pad, color ); // bottom part
-	UI_FillRect( x0 - pad, y0, pad, y1, color ); // left part
-	UI_FillRect( x0 + x1, y0, pad, y1, color ); // right part
+	EngFuncs::PIC_Set( hWhite, 0, 0, 0, parent->a.GetCurrentValue() );
+	EngFuncs::PIC_DrawTrans( x0 - pad, y0 + y1, x1 + 2 * pad, pad ); // bottom part
+
+	EngFuncs::PIC_Set( hWhite, 0, 0, 0, parent->a.GetCurrentValue() );
+	EngFuncs::PIC_DrawTrans( x0 - pad, y0, pad, y1 ); // left part
+
+	EngFuncs::PIC_Set( hWhite, 0, 0, 0, parent->a.GetCurrentValue() );
+	EngFuncs::PIC_DrawTrans( x0 + x1, y0, pad, y1 ); // right part
 }
 
-void CMenuCrosshair::CMenuCrosshairPreview::Draw()
+void CMenuXhair::CMenuCrosshairPreview::Draw()
 {
-	CMenuCrosshair *parent = (CMenuCrosshair *)Parent();
+	CMenuXhair *parent = (CMenuXhair *)Parent();
 
 	int center_x, center_y;
 	int gap, length, thickness;
@@ -324,9 +439,9 @@ void CMenuCrosshair::CMenuCrosshairPreview::Draw()
 		EngFuncs::PIC_Set( hImage, 255, 255, 255 );
 		EngFuncs::PIC_DrawTrans( m_scPos, m_scSize );
 	}
+
 	int textHeight = m_scPos.y - ( m_scChSize * 1.5f );
-	uint textflags = ( iFlags & QMF_DROPSHADOW ) ? ETF_SHADOW : 0;
-	UI_DrawString( font, m_scPos.x, textHeight, m_scSize.w, m_scChSize, szName, uiColorHelp, m_scChSize, QM_LEFT, textflags | ETF_FORCECOL );
+	UI_DrawString( font, m_scPos.x, textHeight, m_scSize.w, m_scChSize, szName, uiColorHelp, m_scChSize, QM_LEFT, ETF_SHADOW | ETF_NOSIZELIMIT | ETF_FORCECOL );
 
 	/* draw padding if wanted */
 	if ( parent->pad.GetCurrentValue() )
@@ -335,23 +450,193 @@ void CMenuCrosshair::CMenuCrosshairPreview::Draw()
 		int pad = (int)parent->pad.GetCurrentValue();
 
 		if ( parent->dot.bChecked )
-			DrawCrosshairPadding( pad, x0, y0, x1, y1, parent );
+			DrawCrosshairPadding( pad, x0, y0, x1, y1 );
 
-		if ( !parent->tShape.bChecked )
-			DrawCrosshairPadding( pad, x0, outer.top, x1, inner.top, parent );
+		if ( !parent->xhairT.bChecked )
+			DrawCrosshairPadding( pad, x0, outer.top, x1, inner.top );
 
-		DrawCrosshairPadding( pad, x0, inner.bottom, x1, outer.bottom, parent );
-		DrawCrosshairPadding( pad, outer.left, y0, inner.left, y1, parent );
-		DrawCrosshairPadding( pad, inner.right, y0, outer.right, y1, parent );
+		DrawCrosshairPadding( pad, x0, inner.bottom, x1, outer.bottom );
+		DrawCrosshairPadding( pad, outer.left, y0, inner.left, y1 );
+		DrawCrosshairPadding( pad, inner.right, y0, outer.right, y1 );
 	}
 
 	if ( parent->dot.bChecked )
-		DrawCrosshairSection( x0, y0, x1, y1, parent );
+		DrawCrosshairSection( x0, y0, x1, y1 );
 
-	if ( !parent->tShape.bChecked )
-		DrawCrosshairSection( x0, outer.top, x1, inner.top, parent );
+	if ( !parent->xhairT.bChecked )
+		DrawCrosshairSection( x0, outer.top, x1, inner.top );
 
-	DrawCrosshairSection( x0, inner.bottom, x1, outer.bottom, parent );
-	DrawCrosshairSection( outer.left, y0, inner.left, y1, parent );
-	DrawCrosshairSection( inner.right, y0, outer.right, y1, parent );
+	DrawCrosshairSection( x0, inner.bottom, x1, outer.bottom );
+	DrawCrosshairSection( outer.left, y0, inner.left, y1 );
+	DrawCrosshairSection( inner.right, y0, outer.right, y1 );
+
+	// draw the rectangle
+	if ( eFocusAnimation == QM_HIGHLIGHTIFFOCUS && IsCurrentSelected() )
+		UI_DrawRectangle( m_scPos, m_scSize, uiInputTextColor );
+	else
+		UI_DrawRectangle( m_scPos, m_scSize, uiInputFgColor );
 }
+
+void CMenuClassicCrosshair::CMenuCrosshairPreview::Draw()
+{
+	CMenuClassicCrosshair *parent = (CMenuClassicCrosshair *)Parent();
+
+	int length;
+	int x = m_scPos.x, y = m_scPos.y;
+	int w = m_scSize.w, h = m_scSize.h;
+	int delta;
+	int i = parent->color.GetCurrentValue();
+	int r = 0, g = 255, b = 0, a = 180;
+
+	if ( i >= 0 && i < V_ARRAYSIZE( g_CrosshairColors ) )
+	{
+		r = g_CrosshairColors[i].r;
+		g = g_CrosshairColors[i].g;
+		b = g_CrosshairColors[i].b;
+	}
+	else
+	{
+		sscanf( EngFuncs::GetCvarString( "cl_crosshair_color" ), "%d %d %d", &r, &g, &b );
+	}
+
+	if ( !hImage )
+	{
+		UI_FillRect( m_scPos, m_scSize, uiPromptBgColor );
+	}
+	else
+	{
+		EngFuncs::PIC_Set( hImage, 255, 255, 255 );
+		EngFuncs::PIC_DrawTrans( m_scPos, m_scSize );
+	}
+
+	switch ( (int)parent->size.GetCurrentValue() )
+	{
+	case 1:
+		length = 10;
+		break;
+	case 2:
+		length = 20;
+		break;
+	case 3:
+		length = 30;
+		break;
+	case 0:
+		if ( ScreenWidth < 640 )
+			length = 30;
+		else if ( ScreenWidth < 1024 )
+			length = 20;
+		else
+			length = 10;
+	default:
+		break;
+	}
+
+	length *= ScreenHeight / 768.0f;
+	delta = ( w / 2 - length ) * 0.5f;
+
+	if ( !parent->translucent.bChecked )
+	{
+		EngFuncs::PIC_Set( hWhite, r, g, b, a );
+		EngFuncs::PIC_DrawTrans( x + w / 2, y + delta, 1, length );
+
+		EngFuncs::PIC_Set( hWhite, r, g, b, a );
+		EngFuncs::PIC_DrawTrans( x + w / 2, y + h / 2 + delta, 1, length );
+
+		EngFuncs::PIC_Set( hWhite, r, g, b, a );
+		EngFuncs::PIC_DrawTrans( x + delta, y + h / 2, length, 1 );
+
+		EngFuncs::PIC_Set( hWhite, r, g, b, a );
+		EngFuncs::PIC_DrawTrans( x + w / 2 + delta, y + h / 2, length, 1 );
+	}
+	else
+	{
+		EngFuncs::PIC_Set( hWhite, r, g, b, a );
+		EngFuncs::PIC_DrawAdditive( x + w / 2, y + delta, 1, length );
+
+		EngFuncs::PIC_Set( hWhite, r, g, b, a );
+		EngFuncs::PIC_DrawAdditive( x + w / 2, y + h / 2 + delta, 1, length );
+
+		EngFuncs::PIC_Set( hWhite, r, g, b, a );
+		EngFuncs::PIC_DrawAdditive( x + delta, y + h / 2, length, 1 );
+
+		EngFuncs::PIC_Set( hWhite, r, g, b, a );
+		EngFuncs::PIC_DrawAdditive( x + w / 2 + delta, y + h / 2, length, 1 );
+	}
+
+	int textHeight = m_scPos.y - ( m_scChSize * 1.5f );
+	UI_DrawString( font, m_scPos.x, textHeight, m_scSize.w, m_scChSize, szName, uiColorHelp, m_scChSize, QM_LEFT, ETF_SHADOW | ETF_NOSIZELIMIT | ETF_FORCECOL );
+
+	// draw the rectangle
+	if ( eFocusAnimation == QM_HIGHLIGHTIFFOCUS && IsCurrentSelected() )
+		UI_DrawRectangle( m_scPos, m_scSize, uiInputTextColor );
+	else
+		UI_DrawRectangle( m_scPos, m_scSize, uiInputFgColor );
+}
+
+void CMenuClassicCrosshair::Reload()
+{
+	char colorstr[32];
+	int rgb[3];
+	char sizestr[32];
+	int i, j;
+
+	CMenuItemsHolder::Reload();
+
+	strncpy( colorstr, EngFuncs::GetCvarString( "cl_crosshair_color" ), sizeof( colorstr ) );
+	if ( sscanf( colorstr, "%d %d %d", &rgb[0], &rgb[1], &rgb[2] ) == 3 )
+	{
+		j = V_ARRAYSIZE( g_CrosshairColors );
+		for ( i = 0; i <= j; i++ )
+		{
+			if ( i == j )
+			{
+				color.SetCurrentValue( colorstr );
+				break;
+			}
+
+			if ( g_CrosshairColors[i].r == rgb[0] && g_CrosshairColors[i].g == rgb[1] && g_CrosshairColors[i].b == rgb[2] )
+			{
+				color.SetCurrentValue( i );
+				break;
+			}
+		}
+	}
+
+	strncpy( sizestr, EngFuncs::GetCvarString( "cl_crosshair_size" ), sizeof( sizestr ) );
+	j = V_ARRAYSIZE( g_szCrosshairSizes );
+	for ( i = 0; i <= j; i++ )
+	{
+		if ( i == j )
+		{
+			size.SetCurrentValue( EngFuncs::GetCvarFloat( "cl_crosshair_size" ) );
+			break;
+		}
+
+		if ( !stricmp( sizestr, g_szCrosshairSizes[i] ) )
+		{
+			size.SetCurrentValue( i );
+			break;
+		}
+	}
+}
+
+void CMenuXhair::Save()
+{
+	char colorstr[32];
+
+	snprintf( colorstr, sizeof( colorstr ), "%d %d %d %d", (int)r.GetCurrentValue(), (int)g.GetCurrentValue(), (int)b.GetCurrentValue(), (int)a.GetCurrentValue() );
+	EngFuncs::CvarSetString( "xhair_color", colorstr );
+
+	additive.WriteCvar();
+	dot.WriteCvar();
+	dynamicMove.WriteCvar();
+	dynamicScale.WriteCvar();
+	gapUseWeaponValue.WriteCvar();
+	gap.WriteCvar();
+	pad.WriteCvar();
+	size.WriteCvar();
+	xhairT.WriteCvar();
+	thick.WriteCvar();
+}
+
+ADD_MENU( menu_crosshair, CMenuCrosshair, UI_Crosshair_Menu );
