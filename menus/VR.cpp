@@ -61,7 +61,7 @@ void CMenuVR::GetConfig( void )
 	tracking.LinkCvar( "vr_6dof" );
 	turnangle.LinkCvar( "vr_turn_angle", CMenuEditable::CVAR_VALUE );
 	smoothturn.LinkCvar( "vr_turn_type" );
-	rightHanded.LinkCvar( "cl_righthand" );
+	rightHanded.LinkCvar( "vr_righthand" );
 }
 
 /*
