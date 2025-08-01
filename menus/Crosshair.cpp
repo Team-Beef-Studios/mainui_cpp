@@ -84,6 +84,7 @@ private:
 	CMenuCheckBox dot;
 	CMenuCheckBox dynamicMove;
 	CMenuSlider dynamicScale;
+	CMenuCheckBox enabled;
 	CMenuCheckBox gapUseWeaponValue;
 	CMenuSlider gap;
 	CMenuSlider pad;
@@ -233,6 +234,11 @@ void CMenuXhair::_Init()
 	a.SetNameAndStatus( L( "Alpha" ), NULL );
 	a.Setup( 0, 255, 1 );
 	a.SetCoord( x, y );
+	//y += 60;
+
+	enabled.SetNameAndStatus( L( "Show crosshair" ), NULL );
+	enabled.LinkCvar( "vr_xhair" );
+	enabled.SetCoord( x, y );
 	y += 60;
 
 	dynamicMove.SetNameAndStatus( L( "Dynamic move" ), NULL );
@@ -300,8 +306,9 @@ void CMenuXhair::_Init()
 	AddItem( r );
 	AddItem( g );
 	AddItem( b );
-	AddItem( a );
+	//AddItem( a );
 
+	AddItem( enabled );
 	AddItem( dynamicMove );
 	AddItem( gap );
 	AddItem( pad );
@@ -366,6 +373,9 @@ void CMenuXhair::CMenuCrosshairPreview::DrawCrosshairSection( int _x0, int _y0, 
 
 	EngFuncs::PIC_Set( hWhite, parent->r.GetCurrentValue(), parent->g.GetCurrentValue(), parent->b.GetCurrentValue(), parent->a.GetCurrentValue() );
 
+	if (!parent->enabled.bChecked) {
+		return;
+	}
 	if ( parent->additive.bChecked )
 		EngFuncs::PIC_DrawAdditive( x0, y0, x1, y1 );
 	else
@@ -631,6 +641,7 @@ void CMenuXhair::Save()
 	dot.WriteCvar();
 	dynamicMove.WriteCvar();
 	dynamicScale.WriteCvar();
+	enabled.WriteCvar();
 	gapUseWeaponValue.WriteCvar();
 	gap.WriteCvar();
 	pad.WriteCvar();
