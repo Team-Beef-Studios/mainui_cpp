@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "PicButton.h"
 #include "CheckBox.h"
 #include "SpinControl.h"
+#include "StringArrayModel.h"
 
 #define ART_BANNER			"gfx/shell/head_vr"
 
@@ -46,6 +47,7 @@ private:
 	CMenuSpinControl turnangle;
 	CMenuCheckBox smoothturn;
 	CMenuCheckBox rightHanded;
+	CMenuSpinControl walkdir;
 };
 
 /*
@@ -62,6 +64,7 @@ void CMenuVR::GetConfig( void )
 	turnangle.LinkCvar( "vr_turn_angle", CMenuEditable::CVAR_VALUE );
 	smoothturn.LinkCvar( "vr_turn_type" );
 	rightHanded.LinkCvar( "vr_righthand" );
+	walkdir.LinkCvar( "vr_walkdirection", CMenuEditable::CVAR_VALUE );
 }
 
 /*
@@ -78,6 +81,7 @@ void CMenuVR::SaveAndPopMenu()
 	turnangle.WriteCvar();
 	smoothturn.WriteCvar();
 	rightHanded.WriteCvar();
+	walkdir.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
 }
@@ -120,9 +124,17 @@ void CMenuVR::_Init( void )
 	smoothturn.onChanged = CMenuEditable::WriteCvarCb;
 	smoothturn.SetCoord( 320, 630 );
 
-	rightHanded.szName = L( "Right-handed controller mapping" );
+	rightHanded.szName = L( "Right-handed mapping" );
 	rightHanded.onChanged = CMenuEditable::WriteCvarCb;
 	rightHanded.SetCoord( 320, 680 );
+
+	static const char *walkdirStr[] = {L( "Controller" ), L( "HMD" )};
+	static CStringArrayModel model( walkdirStr, V_ARRAYSIZE( walkdirStr ));
+	walkdir.szName = L( "Walk in direction of" );
+	walkdir.Setup( &model );
+	walkdir.onChanged = CMenuEditable::WriteCvarCb;
+	walkdir.font = QM_SMALLFONT;
+	walkdir.SetRect( 680, 280, 300, 32 );
 
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
@@ -133,6 +145,7 @@ void CMenuVR::_Init( void )
 	AddItem( turnangle );
 	AddItem( smoothturn );
 	AddItem( rightHanded );
+	AddItem( walkdir );
 }
 
 void CMenuVR::_VidInit( )
