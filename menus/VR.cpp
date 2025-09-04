@@ -48,6 +48,7 @@ private:
 	CMenuCheckBox smoothturn;
 	CMenuCheckBox rightHanded;
 	CMenuSpinControl walkdir;
+	CMenuSpinControl armlen;
 };
 
 /*
@@ -65,6 +66,7 @@ void CMenuVR::GetConfig( void )
 	smoothturn.LinkCvar( "vr_turn_type" );
 	rightHanded.LinkCvar( "vr_righthand" );
 	walkdir.LinkCvar( "vr_walkdirection", CMenuEditable::CVAR_VALUE );
+	armlen.LinkCvar( "vr_arm_length", CMenuEditable::CVAR_VALUE );
 }
 
 /*
@@ -82,6 +84,7 @@ void CMenuVR::SaveAndPopMenu()
 	smoothturn.WriteCvar();
 	rightHanded.WriteCvar();
 	walkdir.WriteCvar();
+	armlen.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
 }
@@ -136,6 +139,14 @@ void CMenuVR::_Init( void )
 	walkdir.font = QM_SMALLFONT;
 	walkdir.SetRect( 680, 280, 300, 32 );
 
+	static const char *armlenStr[] = {L( "Very short" ), L( "Short" ), L( "Normal" ), L( "Long" ), L( "Very long" )};
+	static CStringArrayModel len( armlenStr, V_ARRAYSIZE( armlenStr ));
+	armlen.szName = L( "Your arm length" );
+	armlen.Setup( &len );
+	armlen.onChanged = CMenuEditable::WriteCvarCb;
+	armlen.font = QM_SMALLFONT;
+	armlen.SetRect( 680, 380, 300, 32 );
+
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
 	AddItem( msaa );
@@ -146,6 +157,7 @@ void CMenuVR::_Init( void )
 	AddItem( smoothturn );
 	AddItem( rightHanded );
 	AddItem( walkdir );
+	AddItem( armlen );
 }
 
 void CMenuVR::_VidInit( )
