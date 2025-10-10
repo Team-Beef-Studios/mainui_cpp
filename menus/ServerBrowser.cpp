@@ -1099,7 +1099,7 @@ void CMenuServerBrowser::_Init( void )
 	tabSwitch.SetRect( 360, 230, -20, 32 );
 	tabSwitch.AddSwitch( L( "Direct" ));
 	tabSwitch.AddSwitch( "NAT" ); // intentionally not localized
-	tabSwitch.AddSwitch( L( "Favorites" ));
+	//tabSwitch.AddSwitch( L( "Favorites" ));
 	tabSwitch.AddSwitch( L( "History" ));
 	tabSwitch.eTextAlignment = QM_CENTER;
 	tabSwitch.bMouseToggle = false;
@@ -1300,7 +1300,7 @@ void CMenuServerBrowser::Show()
 	else
 	{
 		banner.SetPicture( ART_BANNER_INET );
-		favorite->Show();
+		favorite->Hide();//Show();
 		addServer->Show();
 		tabSwitch.Show();
 
