@@ -49,6 +49,7 @@ private:
 	CMenuCheckBox rightHanded;
 	CMenuSpinControl walkdir;
 	CMenuSpinControl armlen;
+	CMenuCheckBox haptics;
 };
 
 /*
@@ -67,6 +68,7 @@ void CMenuVR::GetConfig( void )
 	rightHanded.LinkCvar( "vr_righthand" );
 	walkdir.LinkCvar( "vr_walkdirection", CMenuEditable::CVAR_VALUE );
 	armlen.LinkCvar( "vr_arm_length", CMenuEditable::CVAR_VALUE );
+	haptics.LinkCvar( "vr_haptics_enable" );
 }
 
 /*
@@ -85,6 +87,7 @@ void CMenuVR::SaveAndPopMenu()
 	rightHanded.WriteCvar();
 	walkdir.WriteCvar();
 	armlen.WriteCvar();
+	haptics.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
 }
@@ -147,6 +150,10 @@ void CMenuVR::_Init( void )
 	armlen.font = QM_SMALLFONT;
 	armlen.SetRect( 680, 380, 300, 32 );
 
+	haptics.szName = L( "Controller haptics" );
+	haptics.onChanged = CMenuEditable::WriteCvarCb;
+	haptics.SetCoord( 680, 430 );
+
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
 	AddItem( msaa );
@@ -158,6 +165,7 @@ void CMenuVR::_Init( void )
 	AddItem( rightHanded );
 	AddItem( walkdir );
 	AddItem( armlen );
+	AddItem( haptics );
 }
 
 void CMenuVR::_VidInit( )
