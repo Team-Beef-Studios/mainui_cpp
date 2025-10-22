@@ -32,7 +32,7 @@ class CMenuVR : public CMenuFramework
 public:
 	typedef CMenuFramework BaseClass;
 
-    CMenuVR() : CMenuFramework("CMenuVR") { }
+	CMenuVR() : CMenuFramework("CMenuVR") { }
 
 private:
 	void _Init() override;
@@ -48,6 +48,7 @@ private:
 	CMenuCheckBox smoothturn;
 	CMenuCheckBox rightHanded;
 	CMenuSpinControl walkdir;
+	CMenuSpinControl motion;
 	CMenuSpinControl armlen;
 	CMenuCheckBox haptics;
 };
@@ -67,6 +68,7 @@ void CMenuVR::GetConfig( void )
 	smoothturn.LinkCvar( "vr_turn_type" );
 	rightHanded.LinkCvar( "vr_righthand" );
 	walkdir.LinkCvar( "vr_walkdirection", CMenuEditable::CVAR_VALUE );
+	motion.LinkCvar( "vr_motion_activator", CMenuEditable::CVAR_VALUE );
 	armlen.LinkCvar( "vr_arm_length", CMenuEditable::CVAR_VALUE );
 	haptics.LinkCvar( "vr_haptics_enable" );
 }
@@ -86,6 +88,7 @@ void CMenuVR::SaveAndPopMenu()
 	smoothturn.WriteCvar();
 	rightHanded.WriteCvar();
 	walkdir.WriteCvar();
+	motion.WriteCvar();
 	armlen.WriteCvar();
 	haptics.WriteCvar();
 
@@ -142,17 +145,25 @@ void CMenuVR::_Init( void )
 	walkdir.font = QM_SMALLFONT;
 	walkdir.SetRect( 680, 280, 300, 32 );
 
+	static const char *motionStr[] = {L( "Disabled" ), L( "Stretched arm" ), L( "Controller button" )};
+	static CStringArrayModel activator( motionStr, V_ARRAYSIZE( motionStr ));
+	motion.szName = L( "Two hands weapon/hand action" );
+	motion.Setup( &activator );
+	motion.onChanged = CMenuEditable::WriteCvarCb;
+	motion.font = QM_SMALLFONT;
+	motion.SetRect( 680, 380, 300, 32 );
+
 	static const char *armlenStr[] = {L( "Very short" ), L( "Short" ), L( "Normal" ), L( "Long" ), L( "Very long" )};
 	static CStringArrayModel len( armlenStr, V_ARRAYSIZE( armlenStr ));
 	armlen.szName = L( "Your arm length" );
 	armlen.Setup( &len );
 	armlen.onChanged = CMenuEditable::WriteCvarCb;
 	armlen.font = QM_SMALLFONT;
-	armlen.SetRect( 680, 380, 300, 32 );
+	armlen.SetRect( 680, 480, 300, 32 );
 
 	haptics.szName = L( "Controller haptics" );
 	haptics.onChanged = CMenuEditable::WriteCvarCb;
-	haptics.SetCoord( 680, 430 );
+	haptics.SetCoord( 680, 580 );
 
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
@@ -164,6 +175,7 @@ void CMenuVR::_Init( void )
 	AddItem( smoothturn );
 	AddItem( rightHanded );
 	AddItem( walkdir );
+	AddItem( motion );
 	AddItem( armlen );
 	AddItem( haptics );
 }
