@@ -123,19 +123,23 @@ void CMenuVR::_Init( void )
 	tracking.onChanged = CMenuEditable::WriteCvarCb;
 	tracking.SetCoord( 320, 430 );
 
+	haptics.szName = L( "Controller haptics" );
+	haptics.onChanged = CMenuEditable::WriteCvarCb;
+	haptics.SetCoord( 320, 500 );
+
+	rightHanded.szName = L( "Right-handed mapping" );
+	rightHanded.onChanged = CMenuEditable::WriteCvarCb;
+	rightHanded.SetCoord( 320, 550 );
+
+	smoothturn.szName = L( "Smooth turn" );
+	smoothturn.onChanged = CMenuEditable::WriteCvarCb;
+	smoothturn.SetCoord( 320, 600 );
+
 	turnangle.szName = L( "Turn angle/speed" );
 	turnangle.Setup( 5, 90, 5 );
 	turnangle.onChanged = CMenuEditable::WriteCvarCb;
 	turnangle.font = QM_SMALLFONT;
-	turnangle.SetRect( 320, 580, 300, 32 );
-
-	smoothturn.szName = L( "Smooth turn" );
-	smoothturn.onChanged = CMenuEditable::WriteCvarCb;
-	smoothturn.SetCoord( 320, 630 );
-
-	rightHanded.szName = L( "Right-handed mapping" );
-	rightHanded.onChanged = CMenuEditable::WriteCvarCb;
-	rightHanded.SetCoord( 320, 680 );
+	turnangle.SetRect( 320, 680, 300, 32 );
 
 	static const char *walkdirStr[] = {L( "Controller" ), L( "HMD" )};
 	static CStringArrayModel model( walkdirStr, V_ARRAYSIZE( walkdirStr ));
@@ -151,7 +155,7 @@ void CMenuVR::_Init( void )
 	motion.Setup( &activator );
 	motion.onChanged = CMenuEditable::WriteCvarCb;
 	motion.font = QM_SMALLFONT;
-	motion.SetRect( 680, 380, 300, 32 );
+	motion.SetRect( 680, 370, 300, 32 );
 
 	static const char *armlenStr[] = {L( "Very short" ), L( "Short" ), L( "Normal" ), L( "Long" ), L( "Very long" )};
 	static CStringArrayModel len( armlenStr, V_ARRAYSIZE( armlenStr ));
@@ -159,11 +163,7 @@ void CMenuVR::_Init( void )
 	armlen.Setup( &len );
 	armlen.onChanged = CMenuEditable::WriteCvarCb;
 	armlen.font = QM_SMALLFONT;
-	armlen.SetRect( 680, 480, 300, 32 );
-
-	haptics.szName = L( "Controller haptics" );
-	haptics.onChanged = CMenuEditable::WriteCvarCb;
-	haptics.SetCoord( 680, 580 );
+	armlen.SetRect( 680, 470, 300, 32 );
 
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
@@ -171,13 +171,13 @@ void CMenuVR::_Init( void )
 	AddItem( supersampling );
 	AddItem( refreshrate );
 	AddItem( tracking );
-	AddItem( turnangle );
-	AddItem( smoothturn );
 	AddItem( rightHanded );
+	AddItem( haptics );
+	AddItem( smoothturn );
+	AddItem( turnangle );
 	AddItem( walkdir );
 	AddItem( motion );
 	AddItem( armlen );
-	AddItem( haptics );
 }
 
 void CMenuVR::_VidInit( )
