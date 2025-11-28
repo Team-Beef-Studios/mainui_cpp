@@ -68,7 +68,7 @@ void CMenuVR::GetConfig( void )
 	smoothturn.LinkCvar( "vr_turn_type" );
 	rightHanded.LinkCvar( "vr_righthand" );
 	walkdir.LinkCvar( "vr_walkdirection", CMenuEditable::CVAR_VALUE );
-	motion.LinkCvar( "vr_motion_activator", CMenuEditable::CVAR_VALUE );
+	motion.LinkCvar( "vr_motion_activation", CMenuEditable::CVAR_VALUE );
 	armlen.LinkCvar( "vr_arm_length", CMenuEditable::CVAR_VALUE );
 	haptics.LinkCvar( "vr_haptics_enable" );
 }
@@ -149,7 +149,7 @@ void CMenuVR::_Init( void )
 	walkdir.font = QM_SMALLFONT;
 	walkdir.SetRect( 680, 280, 300, 32 );
 
-	static const char *motionStr[] = {L( "Disabled" ), L( "Stretched arm" ), L( "Controller button" )};
+	static const char *motionStr[] = {L( "Disabled" ), L( "Controller button" ), L( "Stretched arm" ), L( "Both options" )};
 	static CStringArrayModel activator( motionStr, V_ARRAYSIZE( motionStr ));
 	motion.szName = L( "Two hands weapon/hand action" );
 	motion.Setup( &activator );
