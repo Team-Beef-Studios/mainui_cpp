@@ -44,6 +44,7 @@ private:
 	CMenuCheckBox msaa;
 	CMenuCheckBox refreshrate;
 	CMenuCheckBox tracking;
+	CMenuCheckBox screenshake;
 };
 
 /*
@@ -57,6 +58,7 @@ void CMenuVR::GetConfig( void )
 	msaa.LinkCvar( "vr_msaa" );
 	refreshrate.LinkCvar( "vr_refreshrate" );
 	tracking.LinkCvar( "vr_6dof" );
+	screenshake.LinkCvar( "vr_screenshake" );
 }
 
 /*
@@ -70,6 +72,7 @@ void CMenuVR::SaveAndPopMenu()
 	msaa.WriteCvar();
 	refreshrate.WriteCvar();
 	tracking.WriteCvar();
+	screenshake.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
 }
@@ -102,12 +105,17 @@ void CMenuVR::_Init( void )
 	tracking.onChanged = CMenuEditable::WriteCvarCb;
 	tracking.SetCoord( 320, 430 );
 
+	screenshake.szName = L( "Shake screen to increase immersion" );
+	screenshake.onChanged = CMenuEditable::WriteCvarCb;
+	screenshake.SetCoord( 320, 480 );
+
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
 	AddItem( msaa );
 	AddItem( supersampling );
 	AddItem( refreshrate );
 	AddItem( tracking );
+	AddItem( screenshake );
 }
 
 void CMenuVR::_VidInit( )
