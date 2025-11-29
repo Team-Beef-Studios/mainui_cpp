@@ -44,13 +44,6 @@ private:
 	CMenuCheckBox msaa;
 	CMenuCheckBox refreshrate;
 	CMenuCheckBox tracking;
-	CMenuSpinControl turnangle;
-	CMenuCheckBox smoothturn;
-	CMenuCheckBox rightHanded;
-	CMenuSpinControl walkdir;
-	CMenuSpinControl motion;
-	CMenuSpinControl armlen;
-	CMenuCheckBox haptics;
 };
 
 /*
@@ -64,13 +57,6 @@ void CMenuVR::GetConfig( void )
 	msaa.LinkCvar( "vr_msaa" );
 	refreshrate.LinkCvar( "vr_refreshrate" );
 	tracking.LinkCvar( "vr_6dof" );
-	turnangle.LinkCvar( "vr_turn_angle", CMenuEditable::CVAR_VALUE );
-	smoothturn.LinkCvar( "vr_turn_type" );
-	rightHanded.LinkCvar( "vr_righthand" );
-	walkdir.LinkCvar( "vr_walkdirection", CMenuEditable::CVAR_VALUE );
-	motion.LinkCvar( "vr_motion_activation", CMenuEditable::CVAR_VALUE );
-	armlen.LinkCvar( "vr_arm_length", CMenuEditable::CVAR_VALUE );
-	haptics.LinkCvar( "vr_haptics_enable" );
 }
 
 /*
@@ -84,13 +70,6 @@ void CMenuVR::SaveAndPopMenu()
 	msaa.WriteCvar();
 	refreshrate.WriteCvar();
 	tracking.WriteCvar();
-	turnangle.WriteCvar();
-	smoothturn.WriteCvar();
-	rightHanded.WriteCvar();
-	walkdir.WriteCvar();
-	motion.WriteCvar();
-	armlen.WriteCvar();
-	haptics.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
 }
@@ -123,61 +102,12 @@ void CMenuVR::_Init( void )
 	tracking.onChanged = CMenuEditable::WriteCvarCb;
 	tracking.SetCoord( 320, 430 );
 
-	haptics.szName = L( "Controller haptics" );
-	haptics.onChanged = CMenuEditable::WriteCvarCb;
-	haptics.SetCoord( 320, 500 );
-
-	rightHanded.szName = L( "Right-handed mapping" );
-	rightHanded.onChanged = CMenuEditable::WriteCvarCb;
-	rightHanded.SetCoord( 320, 550 );
-
-	smoothturn.szName = L( "Smooth turn" );
-	smoothturn.onChanged = CMenuEditable::WriteCvarCb;
-	smoothturn.SetCoord( 320, 600 );
-
-	turnangle.szName = L( "Turn angle/speed" );
-	turnangle.Setup( 5, 90, 5 );
-	turnangle.onChanged = CMenuEditable::WriteCvarCb;
-	turnangle.font = QM_SMALLFONT;
-	turnangle.SetRect( 320, 680, 300, 32 );
-
-	static const char *walkdirStr[] = {L( "Controller" ), L( "HMD" )};
-	static CStringArrayModel model( walkdirStr, V_ARRAYSIZE( walkdirStr ));
-	walkdir.szName = L( "Walk in direction of" );
-	walkdir.Setup( &model );
-	walkdir.onChanged = CMenuEditable::WriteCvarCb;
-	walkdir.font = QM_SMALLFONT;
-	walkdir.SetRect( 680, 280, 300, 32 );
-
-	static const char *motionStr[] = {L( "Disabled" ), L( "Controller button" ), L( "Stretched arm" ), L( "Both options" )};
-	static CStringArrayModel activator( motionStr, V_ARRAYSIZE( motionStr ));
-	motion.szName = L( "Two hands weapon/hand action" );
-	motion.Setup( &activator );
-	motion.onChanged = CMenuEditable::WriteCvarCb;
-	motion.font = QM_SMALLFONT;
-	motion.SetRect( 680, 370, 300, 32 );
-
-	static const char *armlenStr[] = {L( "Very short" ), L( "Short" ), L( "Normal" ), L( "Long" ), L( "Very long" )};
-	static CStringArrayModel len( armlenStr, V_ARRAYSIZE( armlenStr ));
-	armlen.szName = L( "Your arm length" );
-	armlen.Setup( &len );
-	armlen.onChanged = CMenuEditable::WriteCvarCb;
-	armlen.font = QM_SMALLFONT;
-	armlen.SetRect( 680, 470, 300, 32 );
-
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
 	AddItem( msaa );
 	AddItem( supersampling );
 	AddItem( refreshrate );
 	AddItem( tracking );
-	AddItem( rightHanded );
-	AddItem( haptics );
-	AddItem( smoothturn );
-	AddItem( turnangle );
-	AddItem( walkdir );
-	AddItem( motion );
-	AddItem( armlen );
 }
 
 void CMenuVR::_VidInit( )

@@ -293,6 +293,7 @@ void UI_Audio_Menu( void );
 void UI_Video_Menu( void );
 void UI_VidOptions_Menu( void );
 void UI_VidModes_Menu( void );
+void UI_VR_Controls( void );
 void UI_VR_Credits( void );
 void UI_VR_Menu( void );
 void UI_CustomGame_Menu( void );
