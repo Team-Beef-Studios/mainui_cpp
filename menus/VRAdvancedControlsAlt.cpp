@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "MenuStrings.h"
 #include "Bitmap.h"
 #include "PicButton.h"
+#include "Action.h"
 #include "CheckBox.h"
 #include "Slider.h"
 #include "SpinControl.h"
@@ -52,14 +53,13 @@ static struct
 		{ "spray", "impulse 201" },
 		{ "night vision", "nightvision;toggle_light" },
 		{ "text chat", "touch_hide say;touch_hide say2;messagemode" },
-		{ "alt key", ALT_KEY }
 };
 
-class CVRAdvancedControls : public CMenuFramework
+class CVRAdvancedControlsAlt : public CMenuFramework
 {
 public:
 	typedef CMenuFramework BaseClass;
-	CVRAdvancedControls() : CMenuFramework("CVRAdvancedControls") { }
+	CVRAdvancedControlsAlt() : CMenuFramework("CVRAdvancedControlsAlt") { }
 
 private:
 	void _Init( void ) override;
@@ -79,20 +79,21 @@ private:
 	CMenuSpinControl secondaryTrigger;
 	CMenuSpinControl secondaryGrip;
 	CMenuSpinControl secondaryThumbstick;
+	CMenuAction info;
 };
 
-void CVRAdvancedControls::SaveAndPopMenu()
+void CVRAdvancedControlsAlt::SaveAndPopMenu()
 {
-	SetCvar(buttonA, "vr_button_a");
-	SetCvar(buttonB, "vr_button_b");
-	SetCvar(buttonX, "vr_button_x");
-	SetCvar(buttonY, "vr_button_y");
-	SetCvar(primaryTrigger, "vr_button_trigger_right");
-	SetCvar(primaryGrip, "vr_button_grip_right");
-	SetCvar(primaryThumbstick, "vr_button_thumbstick_press_right");
-	SetCvar(secondaryTrigger, "vr_button_trigger_left");
-	SetCvar(secondaryGrip, "vr_button_grip_left");
-	SetCvar(secondaryThumbstick, "vr_button_thumbstick_press_left");
+	SetCvar(buttonA, "vr_button_a_alt");
+	SetCvar(buttonB, "vr_button_b_alt");
+	SetCvar(buttonX, "vr_button_x_alt");
+	SetCvar(buttonY, "vr_button_y_alt");
+	SetCvar(primaryTrigger, "vr_button_trigger_right_alt");
+	SetCvar(primaryGrip, "vr_button_grip_right_alt");
+	SetCvar(primaryThumbstick, "vr_button_thumbstick_press_right_alt");
+	SetCvar(secondaryTrigger, "vr_button_trigger_left_alt");
+	SetCvar(secondaryGrip, "vr_button_grip_left_alt");
+	SetCvar(secondaryThumbstick, "vr_button_thumbstick_press_left_alt");
 
 	CMenuFramework::SaveAndPopMenu();
 }
@@ -102,35 +103,38 @@ void CVRAdvancedControls::SaveAndPopMenu()
 UI_AdvControls_Init
 =================
 */
-void CVRAdvancedControls::_Init( void )
+void CVRAdvancedControlsAlt::_Init( void )
 {
 	banner.SetPicture( ART_BANNER );
 	CMenuFramework::AddItem( banner );
 
-	AddButton( L( "Alt key mapping" ), "",PC_VR_ALT_KEY, UI_VR_AdvControlsAlt, QMF_NOTIFY );
-
 	done.szName = L( "Done" );
 	done.SetPicture( PC_DONE );
-	done.onReleased = VoidCb( &CVRAdvancedControls::SaveAndPopMenu );
-	done.SetCoord( 72, 280 );
+	done.onReleased = VoidCb( &CVRAdvancedControlsAlt::SaveAndPopMenu );
+	done.SetCoord( 72, 230 );
 	CMenuFramework::AddItem( done );
 
 	int x = 320;
 	int y = 280;
-	AddItem(primaryTrigger, L("Primary trigger"), "vr_button_trigger_right", x, y);
-	AddItem(primaryGrip, L("Primary grip"), "vr_button_grip_right", x, y);
-	AddItem(primaryThumbstick, L("Primary thumbstick"), "vr_button_thumbstick_press_right", x, y);
-	AddItem(buttonA, L("Button A"), "vr_button_a", x, y);
-	AddItem(buttonB, L("Button B"), "vr_button_b", x, y);
+	AddItem(primaryTrigger, L("Primary trigger"), "vr_button_trigger_right_alt", x, y);
+	AddItem(primaryGrip, L("Primary grip"), "vr_button_grip_right_alt", x, y);
+	AddItem(primaryThumbstick, L("Primary thumbstick"), "vr_button_thumbstick_press_right_alt", x, y);
+	AddItem(buttonA, L("Button A"), "vr_button_a_alt", x, y);
+	AddItem(buttonB, L("Button B"), "vr_button_b_alt", x, y);
+
+	info.szName = L( "These options are active only with combination with the alt key defined on the previous screen" );
+	info.SetRect( x, y - 40, 675, 240 );
+	CMenuFramework::AddItem( info );
+
 	x = 680; y = 280;
-	AddItem(secondaryTrigger, L("Secondary trigger"), "vr_button_trigger_left", x, y);
-	AddItem(secondaryGrip, L("Secondary grip"), "vr_button_grip_left", x, y);
-	AddItem(secondaryThumbstick, L("Secondary thumbstick"), "vr_button_thumbstick_press_left", x, y);
-	AddItem(buttonX, L("Button X"), "vr_button_x", x, y);
-	AddItem(buttonY, L("Button Y"), "vr_button_y", x, y);
+	AddItem(secondaryTrigger, L("Secondary trigger"), "vr_button_trigger_left_alt", x, y);
+	AddItem(secondaryGrip, L("Secondary grip"), "vr_button_grip_left_alt", x, y);
+	AddItem(secondaryThumbstick, L("Secondary thumbstick"), "vr_button_thumbstick_press_left_alt", x, y);
+	AddItem(buttonX, L("Button X"), "vr_button_x_alt", x, y);
+	AddItem(buttonY, L("Button Y"), "vr_button_y_alt", x, y);
 }
 
-void CVRAdvancedControls::AddItem( CMenuSpinControl& item, const char* name, const char* cvar, int& x, int& y )
+void CVRAdvancedControlsAlt::AddItem( CMenuSpinControl& item, const char* name, const char* cvar, int& x, int& y )
 {
 	static const char *itemlist[V_ARRAYSIZE( g_commands )];
 	static CStringArrayModel model( itemlist, V_ARRAYSIZE( g_commands ) );
@@ -141,19 +145,12 @@ void CVRAdvancedControls::AddItem( CMenuSpinControl& item, const char* name, con
 	item.Setup( &model );
 	item.SetCurrentValue( L( g_commands[0].name ) );
 
-	if ( strcmp( cvar, EngFuncs::GetCvarString( "vr_button_alt" ) ) == 0 )
+	const char* cvarValue = EngFuncs::GetCvarString( cvar );
+	for ( auto & g_command : g_commands )
 	{
-		item.SetCurrentValue( g_commands[ V_ARRAYSIZE( g_commands ) - 1].name );
-	}
-	else
-	{
-		const char* cvarValue = EngFuncs::GetCvarString( cvar );
-		for ( auto & g_command : g_commands )
+		if ( strcmp( g_command.value, cvarValue ) == 0 )
 		{
-			if ( strcmp( g_command.value, cvarValue ) == 0 )
-			{
-				item.SetCurrentValue( g_command.name );
-			}
+			item.SetCurrentValue( g_command.name );
 		}
 	}
 
@@ -164,24 +161,13 @@ void CVRAdvancedControls::AddItem( CMenuSpinControl& item, const char* name, con
 	y += 90;
 }
 
-void CVRAdvancedControls::SetCvar( CMenuSpinControl& item, const char* cvar )
+void CVRAdvancedControlsAlt::SetCvar( CMenuSpinControl& item, const char* cvar )
 {
 	int i = item.GetCurrentValue();
 	if ( i >= 0 && i < V_ARRAYSIZE( g_commands ) )
 	{
-		if ( strcmp( g_commands[ i ].value, ALT_KEY ) == 0 )
-		{
-			EngFuncs::CvarSetString( "vr_button_alt", cvar );
-		}
-		else
-		{
-			EngFuncs::CvarSetString( cvar, g_commands[ i ] .value );
-			if ( strcmp( cvar, EngFuncs::GetCvarString( "vr_button_alt" ) ) == 0 )
-			{
-				EngFuncs::CvarSetString( "vr_button_alt", "" );
-			}
-		}
+		EngFuncs::CvarSetString( cvar, g_commands[ i ] .value );
 	}
 }
 
-ADD_MENU( menu_vr_advcontrols, CVRAdvancedControls, UI_VR_AdvControls );
+ADD_MENU( menu_vr_advcontrols_alt, CVRAdvancedControlsAlt, UI_VR_AdvControlsAlt );
