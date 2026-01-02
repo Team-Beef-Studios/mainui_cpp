@@ -103,6 +103,8 @@ void CMenuVR::_Init( void )
 	tracking.SetCoord( 320, 430 );
 
 	AddItem( banner );
+	AddButton( L( "Controls" ), "",PC_CONTROLS, UI_VR_Controls, QMF_NOTIFY );
+	AddButton( L( "Advanced Controls" ), "",PC_ADV_CONTROLS, UI_VR_AdvControls, QMF_NOTIFY );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVR::SaveAndPopMenu ));
 	AddItem( msaa );
 	AddItem( supersampling );
