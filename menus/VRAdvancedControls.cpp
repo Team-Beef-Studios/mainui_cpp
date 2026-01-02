@@ -29,11 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "StringArrayModel.h"
 
 #define ART_BANNER			"gfx/shell/head_advanced"
-
-#define SAVE_CVAR(item, name) \
-i = item.GetCurrentValue(); \
-if ( i >= 0 && i < V_ARRAYSIZE( g_commands ) ) \
-EngFuncs::CvarSetString( name, g_commands[i].value );
+#define ALT_KEY "XXX"
 
 static struct
 {
@@ -51,11 +47,12 @@ static struct
 		{ "buy", "buy" },
 		{ "use & buy", "+use;buy" },
 		{ "reload", "+reload" },
-		{ "primary attack", "+attack" },
-		{ "secondary attack", "+attack2" },
+		{ "fire", "+attack" },
+		{ "weapon action", "+attack2" },
 		{ "spray", "impulse 201" },
 		{ "night vision", "nightvision;toggle_light" },
 		{ "text chat", "touch_hide say;touch_hide say2;messagemode" },
+		{ "alt key", ALT_KEY }
 };
 
 class CVRAdvancedControls : public CMenuFramework
@@ -69,6 +66,7 @@ private:
 	void SaveAndPopMenu() override;
 
 	void AddItem( CMenuSpinControl& item, const char* name, const char* cvar, int& x, int& y );
+	void SetCvar( CMenuSpinControl& item, const char* cvar );
 
 	CMenuPicButton done;
 	CMenuSpinControl buttonA;
@@ -85,17 +83,16 @@ private:
 
 void CVRAdvancedControls::SaveAndPopMenu()
 {
-	int i = 0;
-	SAVE_CVAR(buttonA, "vr_button_a");
-	SAVE_CVAR(buttonB, "vr_button_b");
-	SAVE_CVAR(buttonX, "vr_button_x");
-	SAVE_CVAR(buttonY, "vr_button_y");
-	SAVE_CVAR(primaryTrigger, "vr_button_trigger_right");
-	SAVE_CVAR(primaryGrip, "vr_button_grip_right");
-	SAVE_CVAR(primaryThumbstick, "vr_button_thumbstick_press_right");
-	SAVE_CVAR(secondaryTrigger, "vr_button_trigger_left");
-	SAVE_CVAR(secondaryGrip, "vr_button_grip_left");
-	SAVE_CVAR(secondaryThumbstick, "vr_button_thumbstick_press_left");
+	SetCvar(buttonA, "vr_button_a");
+	SetCvar(buttonB, "vr_button_b");
+	SetCvar(buttonX, "vr_button_x");
+	SetCvar(buttonY, "vr_button_y");
+	SetCvar(primaryTrigger, "vr_button_trigger_right");
+	SetCvar(primaryGrip, "vr_button_grip_right");
+	SetCvar(primaryThumbstick, "vr_button_thumbstick_press_right");
+	SetCvar(secondaryTrigger, "vr_button_trigger_left");
+	SetCvar(secondaryGrip, "vr_button_grip_left");
+	SetCvar(secondaryThumbstick, "vr_button_thumbstick_press_left");
 
 	CMenuFramework::SaveAndPopMenu();
 }
@@ -142,12 +139,19 @@ void CVRAdvancedControls::AddItem( CMenuSpinControl& item, const char* name, con
 	item.Setup( &model );
 	item.SetCurrentValue( g_commands[0].name );
 
-	const char* cvarValue = EngFuncs::GetCvarString( cvar );
-	for ( auto & g_command : g_commands )
+	if ( strcmp( cvar, EngFuncs::GetCvarString( "vr_button_alt" ) ) == 0 )
 	{
-		if ( strcmp( g_command.value, cvarValue ) == 0 )
+		item.SetCurrentValue( g_commands[ V_ARRAYSIZE( g_commands ) - 1].name );
+	}
+	else
+	{
+		const char* cvarValue = EngFuncs::GetCvarString( cvar );
+		for ( auto & g_command : g_commands )
 		{
-			item.SetCurrentValue( g_command.name );
+			if ( strcmp( g_command.value, cvarValue ) == 0 )
+			{
+				item.SetCurrentValue( g_command.name );
+			}
 		}
 	}
 
@@ -156,6 +160,26 @@ void CVRAdvancedControls::AddItem( CMenuSpinControl& item, const char* name, con
 	item.SetRect( x, y, 300, 32 );
 	CMenuFramework::AddItem( item );
 	y += 90;
+}
+
+void CVRAdvancedControls::SetCvar( CMenuSpinControl& item, const char* cvar )
+{
+	int i = item.GetCurrentValue();
+	if ( i >= 0 && i < V_ARRAYSIZE( g_commands ) )
+	{
+		if ( strcmp( g_commands[ i ].value, ALT_KEY ) == 0 )
+		{
+			EngFuncs::CvarSetString( "vr_button_alt", cvar );
+		}
+		else
+		{
+			EngFuncs::CvarSetString( cvar, g_commands[ i ] .value );
+			if ( strcmp( cvar, EngFuncs::GetCvarString( "vr_button_alt" ) ) == 0 )
+			{
+				EngFuncs::CvarSetString( "vr_button_alt", "" );
+			}
+		}
+	}
 }
 
 ADD_MENU( menu_vr_advcontrols, CVRAdvancedControls, UI_VR_AdvControls );
