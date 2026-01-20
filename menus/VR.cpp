@@ -44,6 +44,7 @@ private:
 	CMenuCheckBox msaa;
 	CMenuCheckBox refreshrate;
 	CMenuCheckBox tracking;
+	CMenuCheckBox vignette;
 };
 
 /*
@@ -57,6 +58,7 @@ void CMenuVR::GetConfig( void )
 	msaa.LinkCvar( "vr_msaa" );
 	refreshrate.LinkCvar( "vr_refreshrate" );
 	tracking.LinkCvar( "vr_6dof" );
+	vignette.LinkCvar( "vr_vignette" );
 }
 
 /*
@@ -70,6 +72,7 @@ void CMenuVR::SaveAndPopMenu()
 	msaa.WriteCvar();
 	refreshrate.WriteCvar();
 	tracking.WriteCvar();
+	vignette.WriteCvar();
 
 	CMenuFramework::SaveAndPopMenu();
 }
@@ -102,6 +105,10 @@ void CMenuVR::_Init( void )
 	tracking.onChanged = CMenuEditable::WriteCvarCb;
 	tracking.SetCoord( 320, 430 );
 
+	vignette.szName = L( "Comfort vignette" );
+	vignette.onChanged = CMenuEditable::WriteCvarCb;
+	vignette.SetCoord( 320, 480 );
+
 	AddItem( banner );
 	AddButton( L( "Controls" ), "",PC_CONTROLS, UI_VR_Controls, QMF_NOTIFY );
 	AddButton( L( "Advanced Controls" ), "",PC_ADV_CONTROLS, UI_VR_AdvControls, QMF_NOTIFY );
@@ -110,6 +117,7 @@ void CMenuVR::_Init( void )
 	AddItem( supersampling );
 	AddItem( refreshrate );
 	AddItem( tracking );
+	AddItem( vignette );
 }
 
 void CMenuVR::_VidInit( )
