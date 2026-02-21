@@ -32,7 +32,7 @@ class CMenuVRControls : public CMenuFramework
 public:
 	typedef CMenuFramework BaseClass;
 
-    CMenuVRControls() : CMenuFramework("CMenuVRControls") { }
+	CMenuVRControls() : CMenuFramework("CMenuVRControls") { }
 
 private:
 	void _Init() override;
@@ -43,6 +43,7 @@ private:
 	CMenuSpinControl turnangle;
 	CMenuCheckBox smoothturn;
 	CMenuCheckBox rightHanded;
+	CMenuCheckBox swapThumbsticks;
 	CMenuSpinControl walkdir;
 	CMenuSpinControl motion;
 	CMenuSpinControl armlen;
@@ -59,6 +60,7 @@ void CMenuVRControls::GetConfig( void )
 	turnangle.LinkCvar( "vr_turn_angle", CMenuEditable::CVAR_VALUE );
 	smoothturn.LinkCvar( "vr_turn_type" );
 	rightHanded.LinkCvar( "vr_righthand" );
+	swapThumbsticks.LinkCvar( "vr_thumbstick_swap" );
 	walkdir.LinkCvar( "vr_walkdirection", CMenuEditable::CVAR_VALUE );
 	motion.LinkCvar( "vr_motion_activation", CMenuEditable::CVAR_VALUE );
 	armlen.LinkCvar( "vr_arm_length", CMenuEditable::CVAR_VALUE );
@@ -75,6 +77,7 @@ void CMenuVRControls::SaveAndPopMenu()
 	turnangle.WriteCvar();
 	smoothturn.WriteCvar();
 	rightHanded.WriteCvar();
+	swapThumbsticks.WriteCvar();
 	walkdir.WriteCvar();
 	motion.WriteCvar();
 	armlen.WriteCvar();
@@ -100,15 +103,19 @@ void CMenuVRControls::_Init( void )
 	rightHanded.onChanged = CMenuEditable::WriteCvarCb;
 	rightHanded.SetCoord( 320, 330 );
 
+	swapThumbsticks.szName = L( "Swap thumbsticks" );
+	swapThumbsticks.onChanged = CMenuEditable::WriteCvarCb;
+	swapThumbsticks.SetCoord( 320, 380 );
+
 	smoothturn.szName = L( "Smooth turn" );
 	smoothturn.onChanged = CMenuEditable::WriteCvarCb;
-	smoothturn.SetCoord( 320, 380 );
+	smoothturn.SetCoord( 320, 430 );
 
 	turnangle.szName = L( "Turn angle/speed" );
 	turnangle.Setup( 5, 90, 5 );
 	turnangle.onChanged = CMenuEditable::WriteCvarCb;
 	turnangle.font = QM_SMALLFONT;
-	turnangle.SetRect( 320, 460, 300, 32 );
+	turnangle.SetRect( 320, 510, 300, 32 );
 
 	static const char *walkdirStr[] = {L( "Controller" ), L( "HMD" )};
 	static CStringArrayModel model( walkdirStr, V_ARRAYSIZE( walkdirStr ));
@@ -137,6 +144,7 @@ void CMenuVRControls::_Init( void )
 	AddItem( banner );
 	AddButton( L( "Done" ), nullptr, PC_DONE, VoidCb( &CMenuVRControls::SaveAndPopMenu ));
 	AddItem( rightHanded );
+	AddItem( swapThumbsticks );
 	AddItem( haptics );
 	AddItem( smoothturn );
 	AddItem( turnangle );
