@@ -30,6 +30,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "StringArrayModel.h"
 #include "DropDown.h"
 
+#include <chrono>
+#include <cstring>
+#include <iostream>
+#include <string>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
 #define ART_BANNER_INET     "gfx/shell/head_inetgames"
 #define ART_BANNER_LAN      "gfx/shell/head_lan"
 #define ART_BANNER_LOCK     "gfx/shell/lock"
@@ -37,6 +51,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define MAX_PING 9.999f
 #define FILTER_MAX_MAPS 16
+
+std::pair<std::string, std::string> servers[] = {
+        {"cs16.naumow.net:27015", "cs16.naumow.net"},
+        {"217.154.211.69:27015", "^5[CSVR] ^7Official Server"},
+        {"89.207.221.227:27015", "^5[CSVR] ^7Noname Server"},
+        {"51.91.249.12:27015", "^2[Lemita]^1::^3 CSDM ^5(t.me/lemita_project)^7"},
+        {"51.91.249.12:27016", "^2[Lemita]^1::^3 TeamPlay^7"},
+        {"5.196.165.2:27015", "OLD SCHOOL CS #Ranked #MMR"},
+};
 
 class CMenuServerBrowser;
 
@@ -369,6 +392,7 @@ public:
 	}
 	void GetGamesList( void );
 	void ClearList( void );
+	void HardcodeServers( void );
 	void RefreshList( void );
 	void JoinGame( void );
 	void ResetPing( void )
@@ -389,6 +413,7 @@ public:
 
 	void ShowAddServerBox( void );
 	void AddServer( void );
+	void AddServer( const char* name );
 
 	void AddServerToList( netadr_t adr, const char *info );
 
@@ -872,6 +897,7 @@ void CMenuServerBrowser::QueryServerList( const CUtlVector<favlist_entry_t> &lis
 void CMenuServerBrowser::RefreshList()
 {
 	ClearList();
+	HardcodeServers();
 
 	if( m_bLanOnly )
 	{
@@ -965,13 +991,128 @@ void CMenuServerBrowser::ShowAddServerBox( void )
 	addServerBox.Show();
 }
 
+int GetServerPing(std::string address)
+{
+    std::string host = address;
+    uint16_t port = 27015;
+
+    auto colon = address.rfind(':');
+    if (colon != std::string::npos)
+    {
+        host = address.substr(0, colon);
+
+        try
+        {
+            port = static_cast<uint16_t>(
+                    std::stoi(address.substr(colon + 1))
+            );
+        }
+        catch (...)
+        {
+            return -1;
+        }
+    }
+
+#ifdef _WIN32
+    WSADATA wsa;
+    WSAStartup(MAKEWORD(2, 2), &wsa);
+#endif
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sock < 0)
+        return -1;
+
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+
+    hostent* he = gethostbyname(host.c_str());
+    if (!he)
+    {
+#ifdef _WIN32
+        closesocket(sock);
+        WSACleanup();
+#else
+        close(sock);
+#endif
+        return -1;
+    }
+
+    memcpy(&addr.sin_addr, he->h_addr_list[0], he->h_length);
+
+#ifdef _WIN32
+    DWORD timeout = 300;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&timeout, sizeof(timeout));
+#else
+    timeval timeout{0, 300000};
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+#endif
+
+    static const unsigned char query[] = {
+            0xFF,0xFF,0xFF,0xFF,
+            'T',
+            'S','o','u','r','c','e',' ','E','n','g','i','n','e',' ','Q','u','e','r','y',
+            0x00
+    };
+
+    char buffer[1400];
+
+    auto start = std::chrono::steady_clock::now();
+
+    sendto(sock,
+           reinterpret_cast<const char*>(query),
+           sizeof(query),
+           0,
+           reinterpret_cast<sockaddr*>(&addr),
+           sizeof(addr));
+
+    sockaddr_in from{};
+#ifdef _WIN32
+    int len = sizeof(from);
+#else
+    socklen_t len = sizeof(from);
+#endif
+
+    int received = recvfrom(sock,
+                            buffer,
+                            sizeof(buffer),
+                            0,
+                            reinterpret_cast<sockaddr*>(&from),
+                            &len);
+
+    auto end = std::chrono::steady_clock::now();
+
+#ifdef _WIN32
+    closesocket(sock);
+    WSACleanup();
+#else
+    close(sock);
+#endif
+
+    if (received <= 0)
+        return -1;
+
+    return static_cast<int>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+    );
+}
+
 void CMenuServerBrowser::AddServer( void )
+{
+	AddServer( addressField.GetBuffer() );
+}
+
+void CMenuServerBrowser::AddServer( const char *name )
 {
 	netadr_t adr;
 
+	int ping = GetServerPing( addressField.GetBuffer() );
+	if( ping <= 0 )
+		return;
+
 	if( !EngFuncs::textfuncs.pNetAPI->StringToAdr( (char *)addressField.GetBuffer(), &adr ))
 	{
-		UI_ShowMessageBox( L( "Invalid address" ));
+		//UI_ShowMessageBox( L( "Invalid address" ));
 		return;
 	}
 
@@ -995,22 +1136,41 @@ void CMenuServerBrowser::AddServer( void )
 
 	// FIXME: for now we can only show custom servers at favorites tab
 
-	favlist_entry_t entry( addressField.GetBuffer(), proto, false );
+	favlist_entry_t entry( name, proto, false );
 	favoritesList.AddToTail( entry );
 
-	if( tabSwitch.GetState() != 2 )
-		tabSwitch.SetState( 2 );
+	/*if( tabSwitch.GetState() != 2 )
+		tabSwitch.SetState( 2 );*/
 
 	CUtlString fakeInfoString;
 	entry.GenerateDummyInfoString( fakeInfoString );
 
 	server_t serv( adr, fakeInfoString, false, true );
 	serv.UpdateData();
-	serv.SetPing( 9.999f );
+	serv.SetPing( ping * 0.001f );
 	gameListModel.servers.AddToTail( serv );
 
 	entry.QueryServer();
 	UI_MenuResetPing_f();
+}
+
+void CMenuServerBrowser::HardcodeServers( void ) {
+	//backup values
+	char buffer[128];
+	strcpy(buffer, addressField.GetBuffer());
+	float prot = serverProtocol.GetCurrentValue();
+
+	//add servers
+	serverProtocol.SetCurrentValue(0.0f);
+	for (const auto& server : servers) {
+		addressField.SetBuffer(server.first.c_str());
+		AddServer(server.second.c_str());
+	}
+
+	//restore values
+	addressField.SetBuffer(buffer);
+	serverProtocol.SetCurrentValue(prot);
+	joinGame->SetGrayed( false );
 }
 
 /*
@@ -1086,8 +1246,8 @@ void CMenuServerBrowser::_Init( void )
 	gameList.SetupColumn( COLUMN_PASSWORD, NULL, 32.0f, true );
 	gameList.SetupColumn( COLUMN_FAVORITE, NULL, 32.0f, true );
 	gameList.SetupColumn( COLUMN_NAME, L( "Name" ), 0.40f );
-	gameList.SetupColumn( COLUMN_MAP, L( "GameUI_Map" ), 0.25f );
-	gameList.SetupColumn( COLUMN_PLAYERS, L( "Players" ), 100.0f, true );
+	//gameList.SetupColumn( COLUMN_MAP, L( "GameUI_Map" ), 0.25f );
+	//gameList.SetupColumn( COLUMN_PLAYERS, L( "Players" ), 100.0f, true );
 	gameList.SetupColumn( COLUMN_PING, L( "Ping" ), 120.0f, true );
 	gameList.SetupColumn( COLUMN_IP, L( "IP" ), 0, true );
 	gameList.SetModel( &gameListModel );
@@ -1097,10 +1257,10 @@ void CMenuServerBrowser::_Init( void )
 	gameList.SetSize( -20, 465 );
 
 	tabSwitch.SetRect( 360, 230, -20, 32 );
-	tabSwitch.AddSwitch( L( "Direct" ));
-	tabSwitch.AddSwitch( "NAT" ); // intentionally not localized
-	//tabSwitch.AddSwitch( L( "Favorites" ));
-	tabSwitch.AddSwitch( L( "History" ));
+	//tabSwitch.AddSwitch( L( "Direct" ));
+	//tabSwitch.AddSwitch( "NAT" ); // intentionally not localized
+	tabSwitch.AddSwitch( L( "Servers" ));
+	//tabSwitch.AddSwitch( L( "History" ));
 	tabSwitch.eTextAlignment = QM_CENTER;
 	tabSwitch.bMouseToggle = false;
 	tabSwitch.bKeepToggleWidth = true;
@@ -1300,7 +1460,7 @@ void CMenuServerBrowser::Show()
 	else
 	{
 		banner.SetPicture( ART_BANNER_INET );
-		favorite->Hide();//Show();
+		favorite->Show();
 		addServer->Show();
 		tabSwitch.Show();
 
@@ -1315,7 +1475,7 @@ void CMenuServerBrowser::Show()
 	// clear out server table
 	staticWaitingPassword = false;
 	gameListModel.Flush();
-	gameList.SetSortingColumn( COLUMN_PING );
+	gameList.SetSortingColumn( COLUMN_NAME );
 	joinGame->SetGrayed( true );
 	viewGameInfo->SetGrayed( true );
 	favorite->SetGrayed( true );
